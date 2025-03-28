@@ -1,0 +1,62 @@
+//! A simple ransomware file detector written as a Linux kernel module in Rust.
+//! 
+//! This module scans directories for files with known ransomware extensions and logs potential threats.
+//! It leverages the `kernel::fs` and `kernel::print` modules to interact with the Linux filesystem and kernel logs.
+
+#![no_std]
+#![no_main]
+
+use kernel::{prelude::*, fs::Path, print};
+
+// List of ransomware file extensions to detect
+const RANSOMWARE_EXTENSIONS: [&str; 16] = [
+    ".locked", ".crypto", ".encrypted", ".ransom",
+    ".rgss", ".lockedfile", ".encryptedfile",
+    ".cerber", ".zzz", ".pay", ".file",
+    ".map", ".redu", ".data", ".decrypt"
+];
+
+/// Check if a file has a ransomware-like extension.
+fn is_ransomware_file(file_name: &str) -> bool {
+    RANSOMWARE_EXTENSIONS.iter().any(|ext| file_name.ends_with(ext))
+}
+
+/// Scan the specified directory for potential ransomware files.
+fn scan_directory(path: &str) {
+    if let Ok(dir) = Path::from_bytes(path.as_bytes()) {
+        if let Ok(entries) = dir.read_dir() {
+            for entry in entries.flatten() {
+                let file_name = entry.file_name().to_string_lossy();
+                if is_ransomware_file(&file_name) {
+                    print!("Potential ransomware detected: {}\n", file_name);
+                }
+            }
+        } else {
+            print!("Failed to read directory: {}\n", path);
+        }
+    } else {
+        print!("Invalid path: {}\n", path);
+    }
+}
+
+/// Initialize the ransomware detector kernel module.
+#[no_mangle]
+pub extern "C" fn init_module() -> i32 {
+    print!("Ransomware detector loaded. Scanning /home...\n");
+    scan_directory("/home");
+    0
+}
+
+/// Cleanup function called on module unload.
+#[no_mangle]
+pub extern "C" fn cleanup_module() {
+    print!("Ransomware detector unloaded.\n");
+}
+
+kernel::module! {
+    type: (),
+    name: "ransomware_detector",
+    author: "Benjamin Miller",
+    description: "Rust-based Ransomware File Detector Kernel Module",
+    license: "GPL",
+}
