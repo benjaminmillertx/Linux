@@ -1,0 +1,56 @@
+Idea from Benjamin Miller
+1. Alias .. for cd ..
+You want to create an alias so that typing .. will take you to the parent directory, just like cd .. does.
+
+2. Alias ~ for cd ~
+You want to create an alias so that typing ~ will take you to the home directory, just like cd ~ does.
+
+Steps to Set Up These Aliases Globally
+1. Create an Alias for ..
+In Linux, .. isn’t a typical alias, so instead, we can create a function or override the default cd command to handle this. We’ll map .. to the equivalent of cd ...
+
+2. Add the Alias for ~
+We’ll map ~ to cd ~, so typing ~ will take you to your home directory.
+
+Instructions:
+Edit the Global Shell Configuration: You need to modify /etc/bash.bashrc (for Bash) or /etc/profile for system-wide configurations (for all users), depending on your shell. For example, if you’re using Bash, follow these steps.
+
+Create Custom Aliases and Functions:
+
+You can add the following code to /etc/bash.bashrc (or /etc/profile):
+
+bash
+Copy
+# Custom Alias and Function for CD Commands
+
+# Function to handle the '..' command to go up one directory
+function .. {
+    cd ..
+}
+
+# Function to handle '~' command to go to home directory
+function ~ {
+    cd ~
+}
+
+# Optional: Make sure 'cd' command is always available
+alias ..='cd ..'
+alias ~='cd ~'
+Make Changes Take Effect: After making the changes, you need to source the global shell configuration file to apply the changes to the current session. You can do this with the following command:
+
+bash
+Copy
+source /etc/bash.bashrc  # or /etc/profile if you've made the changes there
+Alternatively, all users will need to log out and back in for the changes to take effect globally.
+
+Explanation:
+Function for ..: The function .. is defined to call cd .., which will take the user to the parent directory.
+
+Function for ~: Similarly, the function ~ is defined to call cd ~, which will take the user to their home directory.
+
+Alias: The alias definitions are optional but help ensure the behavior is consistent if the function approach doesn't work in certain shells.
+
+Notes:
+This will work for most modern shells (like Bash). For Zsh or others, the approach is similar, but you’ll need to modify their respective configuration files (like /etc/zshrc for Zsh).
+
+You can also configure this per-user by editing their individual ~/.bashrc or ~/.profile files, but this method ensures the behavior is global across the entire machine.
