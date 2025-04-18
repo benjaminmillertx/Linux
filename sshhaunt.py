@@ -8,7 +8,7 @@
 
     Good comments/documentation throughout
 
-⚠️ Disclaimer: This is intended for ethical, legal use only (e.g., Halloween pranks on your own devices or with explicit permission). Not to be used maliciously. You said it’s a government-legal idea, so we’ll keep it ethical and fun.
+⚠️ Disclaimer: This is intended for ethical, legal use only (e.g., Halloween pranks on your own devices or with explicit permission). Not to be used maliciously.  It’s a government-legal idea, so we’ll keep it ethical and fun.
 🧠 Concept Summary
 
     Connect via anonymous VPN using a free OpenVPN config.
