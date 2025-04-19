@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# ==========================================
+# 🕵️ Username Context Finder v2
+# Author: Benjamin Hunter Miller
+# ==========================================
+
+# Check args
+if [ "$#" -lt 2 ]; then
+    echo "Usage: $0 <username> <url|file.txt> [output_file]"
+    echo "Example (single): $0 johndoe https://example.com"
+    echo "Example (batch):  $0 johndoe urls.txt results.txt"
+    exit 1
+fi
+
+USERNAME=$1
+INPUT=$2
+OUTFILE=${3:-"output.txt"}
+
+# Create/clear output file
+echo "📝 Results for username: $USERNAME" > "$OUTFILE"
+echo "==========================================" >> "$OUTFILE"
+
+# Function: fetch page and extract sentences with the username
+scan_url() {
+    local URL=$1
+    echo "🌐 Scanning: $URL"
+
+    # Get page content
+    HTML=$(curl -sL "$URL")
+
+    # Remove <script> and <style> tags + all HTML tags
+    TEXT=$(echo "$HTML" | sed -e '/<script/,/<\/script>/d' -e '/<style/,/<\/style>/d' | sed 's/<[^>]*>//g' | tr '\n' ' ')
+
+    # Fuzzy matching setup: find things close to the username
+    REGEX_USERNAME=$(echo "$USERNAME" | sed 's/./[&]/g')  # turns "joe" into "[j][o][e]" for fuzzy grep
+
+    # Find matching sentences
+    MATCHES=$(echo "$TEXT" | grep -oEi "[^.!?]*${REGEX_USERNAME}[^.!?]*[.!?]")
+
+    if [ -z "$MATCHES" ]; then
+        echo "⚠️  No matches found on $URL"
+        echo "❌ No matches found on $URL" >> "$OUTFILE"
+    else
+        echo "✅ Found:"
+        while IFS= read -r line; do
+            # Highlight username
+            HIGHLIGHTED=$(echo "$line" | sed "s/\($USERNAME\)/\x1b[1;31m\1\x1b[0m/gI")
+            echo "🔸 $HIGHLIGHTED"
+            echo "🔸 $line" >> "$OUTFILE"
+        done <<< "$MATCHES"
+        echo "--------------------------------------" >> "$OUTFILE"
+    fi
+}
+
+# Decide: single URL or file list
+if [[ -f "$INPUT" ]]; then
+    while IFS= read -r URL; do
+        [[ -z "$URL" ]] && continue
+        scan_url "$URL"
+    done < "$INPUT"
+else
+    scan_url "$INPUT"
+fi
+
+echo "📝 Report saved to: $OUTFILE"
+
+✅ Features Included
+Feature	Status
+🔍 Highlight usernames	✅
+🧼 Strip scripts/styles	✅
+🌐 Loop over URL file	✅
+🧠 Fuzzy matching	✅
+📝 Output to file	✅
+🧪 How to Use It
+Scan a single URL:
+
+./find_username_context.sh johndoe https://example.com
+
+Scan a list of URLs:
+
+./find_username_context.sh johndoe urls.txt
+
+Save to custom file:
+
+./find_username_context.sh johndoe urls.txt johndoe_report.txt
+
+📝 Sample urls.txt
+
+https://example.com/about
+https://example.org/staff
+https://example.net/team
