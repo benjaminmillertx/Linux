@@ -1,0 +1,116 @@
+#!/bin/bash
+
+# ==========================================
+# 🛠️ OSINT Toolkit Installer
+# Author: Benjamin Hunter Miller
+# ==========================================
+
+INSTALL_DIR="$HOME/osint-tools"
+REPOS=(
+    "https://github.com/sherlock-project/sherlock.git"
+    "https://github.com/mxrch/GHunt.git"
+    "https://github.com/s0md3v/Photon.git"
+    "https://github.com/m4ll0k/Infoga.git"
+)
+REPO_NAMES=(
+    "sherlock"
+    "GHunt"
+    "Photon"
+    "Infoga"
+)
+
+# Utilities / dependencies
+DEPENDENCIES=(
+    git
+    python3
+    python3-pip
+    python3-venv
+    curl
+    xterm
+    gnome-terminal
+    whiptail
+)
+
+echo "===================================="
+echo "🛠️  OSINT Toolkit Installer"
+echo "📁 Installing to: $INSTALL_DIR"
+echo "===================================="
+
+# Update and install dependencies
+echo "📦 Installing system dependencies..."
+sudo apt update
+sudo apt install -y "${DEPENDENCIES[@]}"
+
+# Create base install directory
+mkdir -p "$INSTALL_DIR"
+cd "$INSTALL_DIR" || exit 1
+
+# Clone tools if they aren't already present
+for i in "${!REPOS[@]}"; do
+    REPO="${REPOS[$i]}"
+    NAME="${REPO_NAMES[$i]}"
+    if [ -d "$INSTALL_DIR/$NAME" ]; then
+        echo "✔️ $NAME already exists, skipping..."
+    else
+        echo "📥 Cloning $NAME..."
+        git clone "$REPO" "$INSTALL_DIR/$NAME"
+    fi
+done
+
+# GHunt setup (requires user input for login.json)
+echo "🔐 Setting up GHunt..."
+cd "$INSTALL_DIR/GHunt" || exit 1
+python3 -m pip install -r requirements.txt
+echo "📝 Reminder: Run 'python3 ghunt.py login' manually to set up credentials."
+cd "$INSTALL_DIR"
+
+# Sherlock setup
+echo "🔍 Setting up Sherlock..."
+cd "$INSTALL_DIR/sherlock"
+python3 -m pip install -r requirements.txt
+cd "$INSTALL_DIR"
+
+# Photon setup
+echo "🕸️ Setting up Photon..."
+cd "$INSTALL_DIR/Photon"
+python3 -m pip install -r requirements.txt
+cd "$INSTALL_DIR"
+
+# Infoga setup
+echo "📧 Setting up Infoga..."
+cd "$INSTALL_DIR/Infoga"
+pip3 install -r requirements.txt || echo "⚠️ Some packages may fail, Infoga uses old deps."
+cd "$INSTALL_DIR"
+
+# Optional tool installs
+read -p "➕ Install optional tools like twint, email2phonenumber, etc? (y/n): " INSTALL_EXTRA
+
+if [[ "$INSTALL_EXTRA" =~ ^[Yy]$ ]]; then
+    echo "📦 Installing optional tools..."
+    pip3 install twint
+    # For email2phonenumber, just clone and run like the others
+    if [ ! -d "$INSTALL_DIR/email2phonenumber" ]; then
+        git clone https://github.com/martinvigo/email2phonenumber.git
+        cd email2phonenumber
+        pip3 install -r requirements.txt
+        cd "$INSTALL_DIR"
+    fi
+else
+    echo "⏭️ Skipping optional tools."
+fi
+
+# Done
+echo "✅ All tools installed in: $INSTALL_DIR"
+echo "👉 You can now launch with your whiptail launcher."
+
+🚀 How to Use It
+
+    Save the above as osint_installer.sh
+
+    Make it executable:
+
+chmod +x osint_installer.sh
+
+Run it:
+
+./osint_installer.sh
