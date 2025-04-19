@@ -1,0 +1,288 @@
+    🐚 whiptail-based interactive launcher
+
+    🛠️ Installer script for dependencies & tools
+
+    ⚙️ Auto-config for usernames/domains/emails
+
+    📁 GitHub project structure & README
+
+📦 Project Structure
+
+osint-toolkit/
+├── launcher.sh                 # Whiptail-based launcher
+├── installer.sh                # Full installer script
+├── config.cfg                  # User config for targets
+└── README.md                   # GitHub documentation
+
+📁 launcher.sh – OSINT Toolkit Launcher (Whiptail UI)
+
+#!/bin/bash
+
+# ==========================================
+# 🕵️ OSINT Terminal Launcher (Whiptail UI)
+# Author: Benjamin Hunter Miller
+# ==========================================
+
+CONFIG_FILE="./config.cfg"
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+else
+    echo "⚠️ Config file not found! Please create 'config.cfg'."
+    exit 1
+fi
+
+TOOLS=(
+    "theHarvester"
+    "Maltego"
+    "SpiderFoot"
+    "Recon-ng"
+    "Sherlock"
+    "GHunt"
+    "Photon"
+    "Infoga"
+    "Email2phonenumber"
+    "twint"
+)
+
+TOOL_COMMANDS=(
+    "theHarvester -d $DOMAIN -b all"
+    "maltego"
+    "spiderfoot -l 127.0.0.1:5001"
+    "recon-ng"
+    "python3 osint-tools/sherlock/sherlock.py $USERNAME"
+    "python3 osint-tools/GHunt/ghunt.py login"
+    "python3 osint-tools/Photon/photon.py -u $TARGET_URL -o photon_results"
+    "python3 osint-tools/Infoga/infoga.py -t $EMAIL --source all"
+    "python3 osint-tools/email2phonenumber/email2phonenumber.py -e $EMAIL"
+    "python3 -m twint -u $USERNAME"
+)
+
+launch_tool() {
+    CMD="${TOOL_COMMANDS[$1]}"
+    echo "🚀 Launching: ${TOOLS[$1]}"
+    gnome-terminal -- bash -c "$CMD; exec bash" 2>/dev/null ||
+    xterm -e "$CMD; bash" 2>/dev/null ||
+    konsole -e "$CMD" 2>/dev/null ||
+    echo "⚠️ Could not open terminal for: ${TOOLS[$1]}"
+}
+
+# Build Whiptail Menu
+MENU_ITEMS=()
+for i in "${!TOOLS[@]}"; do
+    MENU_ITEMS+=($i "${TOOLS[$i]}")
+done
+
+MENU_CHOICE=$(whiptail --title "🕵️ OSINT Toolkit Launcher" \
+    --menu "Select a tool to launch:" 20 60 12 \
+    "${MENU_ITEMS[@]}" \
+    A "Launch ALL (⚠️ heavy)" \
+    Q "Quit" 3>&1 1>&2 2>&3)
+
+EXIT_STATUS=$?
+
+if [ $EXIT_STATUS -ne 0 ]; then
+    echo "❌ Cancelled."
+    exit 1
+fi
+
+case "$MENU_CHOICE" in
+    Q)
+        echo "👋 Bye, OSINT sleuth!"
+        exit 0
+        ;;
+    A)
+        for i in "${!TOOLS[@]}"; do
+            launch_tool "$i"
+        done
+        ;;
+    *)
+        launch_tool "$MENU_CHOICE"
+        ;;
+esac
+
+🛠️ installer.sh – Installer Script
+
+#!/bin/bash
+
+# ==========================================
+# 🛠️ OSINT Toolkit Installer
+# Author: Benjamin Hunter Miller
+# ==========================================
+
+INSTALL_DIR="$HOME/osint-tools"
+CONFIG_FILE="./config.cfg"
+
+DEPENDENCIES=(
+    git
+    python3
+    python3-pip
+    python3-venv
+    curl
+    xterm
+    gnome-terminal
+    whiptail
+)
+
+REPOS=(
+    "https://github.com/sherlock-project/sherlock.git"
+    "https://github.com/mxrch/GHunt.git"
+    "https://github.com/s0md3v/Photon.git"
+    "https://github.com/m4ll0k/Infoga.git"
+    "https://github.com/martinvigo/email2phonenumber.git"
+)
+
+REPO_NAMES=(
+    "sherlock"
+    "GHunt"
+    "Photon"
+    "Infoga"
+    "email2phonenumber"
+)
+
+echo "===================================="
+echo "🛠️  OSINT Toolkit Installer"
+echo "📁 Installing to: $INSTALL_DIR"
+echo "===================================="
+
+# Install dependencies
+sudo apt update
+sudo apt install -y "${DEPENDENCIES[@]}"
+
+# Create install directory
+mkdir -p "$INSTALL_DIR"
+cd "$INSTALL_DIR" || exit 1
+
+# Clone each tool
+for i in "${!REPOS[@]}"; do
+    NAME="${REPO_NAMES[$i]}"
+    if [ -d "$INSTALL_DIR/$NAME" ]; then
+        echo "✔️ $NAME already exists, skipping..."
+    else
+        echo "📥 Cloning $NAME..."
+        git clone "${REPOS[$i]}" "$INSTALL_DIR/$NAME"
+    fi
+done
+
+# Install Python requirements
+for TOOL in sherlock Photon GHunt Infoga email2phonenumber; do
+    cd "$INSTALL_DIR/$TOOL"
+    if [ -f requirements.txt ]; then
+        echo "📦 Installing Python deps for $TOOL..."
+        python3 -m pip install -r requirements.txt || echo "⚠️ Issues with $TOOL requirements."
+    fi
+done
+
+# Generate config.cfg if missing
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "🛠️ Creating config.cfg..."
+    USERNAME=$(whiptail --inputbox "Enter default username:" 8 40 "exampleuser" --title "Username" 3>&1 1>&2 2>&3)
+    EMAIL=$(whiptail --inputbox "Enter default email:" 8 40 "test@example.com" --title "Email" 3>&1 1>&2 2>&3)
+    DOMAIN=$(whiptail --inputbox "Enter target domain:" 8 40 "example.com" --title "Domain" 3>&1 1>&2 2>&3)
+    TARGET_URL=$(whiptail --inputbox "Enter target URL:" 8 40 "https://example.com" --title "Target URL" 3>&1 1>&2 2>&3)
+
+    cat <<EOF > "$CONFIG_FILE"
+DOMAIN=$DOMAIN
+EMAIL=$EMAIL
+USERNAME=$USERNAME
+TARGET_URL=$TARGET_URL
+EOF
+
+    echo "📄 Config saved to config.cfg"
+fi
+
+echo "✅ Installation complete!"
+
+⚙️ config.cfg – User Target Configuration
+
+# config.cfg
+DOMAIN=example.com
+EMAIL=test@example.com
+USERNAME=exampleuser
+TARGET_URL=https://example.com
+
+📘 README.md – GitHub Documentation
+
+# 🕵️ OSINT Terminal Toolkit
+
+A terminal-based OSINT toolkit inspired by [Null Byte](https://null-byte.wonderhowto.com/) and [Buscador OSINT distro](https://inteltechniques.com/buscador/). Easily launch your favorite recon tools with a simple whiptail interface.
+
+---
+
+## 📦 Features
+
+- 🔘 Whiptail-powered terminal launcher
+- 🛠️ Full installation script for dependencies
+- 🔧 Auto-config for username/domain/email/url
+- 🧠 Plug-and-play setup for popular tools
+
+---
+
+## 📁 Toolkit Includes
+
+| Tool                | Purpose                           |
+|---------------------|-----------------------------------|
+| theHarvester        | Emails, domains, IPs              |
+| Maltego             | Link analysis (GUI)               |
+| SpiderFoot          | Automated recon engine            |
+| Recon-ng            | Recon framework                   |
+| Sherlock            | Username hunting                  |
+| GHunt               | Google account recon              |
+| Photon              | Web crawler                       |
+| Infoga              | Email recon                       |
+| Email2PhoneNumber   | Email to phone OSINT              |
+| Twint               | Twitter scraper (no API)          |
+
+---
+
+## 🚀 Quick Start
+
+1. Clone the repo  
+   ```bash
+   git clone https://github.com/yourusername/osint-toolkit.git
+   cd osint-toolkit
+
+    Run the installer
+
+./installer.sh
+
+Launch the toolkit
+
+    ./launcher.sh
+
+    Edit targets in config.cfg as needed.
+
+📋 Requirements
+
+    Ubuntu/Debian system
+
+    Python 3.x
+
+    Git
+
+    Terminal emulator (e.g., gnome-terminal, xterm)
+
+    Internet connection
+
+🔒 Legal Disclaimer
+
+This toolkit is for educational and ethical research purposes only. You are responsible for how you use it. Don't be shady.
+📫 Contribute / Issues
+
+Pull requests welcome! Or open an issue if something breaks.
+
+
+---
+
+### 🔗 Ready for GitHub?
+
+Create a repo called something like `osint-toolkit`, add these files, and push:
+
+```bash
+git init
+git add .
+git commit -m "Initial commit: OSINT toolkit launcher + installer"
+git branch -M main
+git remote add origin https://github.com/YOURUSERNAME/osint-toolkit.git
+git push -u origin main
+``
+
