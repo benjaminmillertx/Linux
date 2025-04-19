@@ -1,0 +1,98 @@
+🧰 What You’ll Build
+
+A Python script that:
+
+    Connects to Telegram using your own account
+
+    Joins or accesses a public Telegram channel
+
+    Scrapes the latest messages
+
+    Searches for drug-related keywords (or anything else you specify)
+
+    Outputs matches to your terminal and optionally a file
+
+✅ Requirements
+
+pip install telethon
+
+You’ll also need:
+
+    A Telegram API ID and hash
+
+    A Telegram account (used for login)
+
+🔐 First-Time Setup (once)
+
+Run this code once to authorize your account:
+
+from telethon.sync import TelegramClient
+
+api_id = 123456  # Replace with your API ID
+api_hash = 'your_api_hash'
+
+with TelegramClient('session_name', api_id, api_hash) as client:
+    print("You're now logged in.")
+
+It will prompt you for your phone number and send a login code via Telegram.
+🕵️ scrape_telegram.py — Public Channel Scraper with Keyword Matching
+
+from telethon.sync import TelegramClient
+from telethon.tl.types import PeerChannel
+import re
+
+# === CONFIG ===
+api_id = 123456  # your api_id
+api_hash = 'your_api_hash'  # your api_hash
+channel_username = 'publicchannelname'  # e.g. 'drugsdailyupdates'
+keywords = ['cocaine', 'heroin', 'fentanyl', 'lsd', 'xanax', 'meth', 'opioid']
+limit = 100  # number of messages to scrape
+output_file = 'matches.txt'
+
+# === SETUP ===
+client = TelegramClient('session_scraper', api_id, api_hash)
+client.start()
+
+# === FETCH MESSAGES ===
+print(f"📥 Scraping {limit} messages from @{channel_username}...")
+channel = client.get_entity(channel_username)
+messages = client.iter_messages(channel, limit=limit)
+
+matches = []
+
+for message in messages:
+    if message.message:
+        for kw in keywords:
+            if re.search(rf'\b{kw}\b', message.message, re.IGNORECASE):
+                matches.append((kw, message.message))
+                print(f"🔍 [{kw.upper()}] {message.message[:100]}...")
+                break
+
+# === SAVE RESULTS ===
+if matches:
+    with open(output_file, 'w', encoding='utf-8') as f:
+        for kw, msg in matches:
+            f.write(f"[{kw.upper()}] {msg}\n{'-'*50}\n")
+    print(f"\n✅ {len(matches)} matches saved to {output_file}")
+else:
+    print("✅ No keyword matches found.")
+
+🧪 Example Usage
+
+python scrape_telegram.py
+
+Output:
+
+📥 Scraping 100 messages from @drugsdailyupdates...
+🔍 [FENTANYL] Authorities seized 25 pounds of fentanyl hidden in vehicle...
+🔍 [XANAX] New supplier shipping XANAX bars to EU...
+
+✅ 2 matches saved to matches.txt
+
+🛡️ Legal & Ethical Reminder
+
+    Stick to public channels
+
+    Don't scrape or store PII without consent
+
+    This is meant for research, OSINT, or awareness, not targeting individuals
