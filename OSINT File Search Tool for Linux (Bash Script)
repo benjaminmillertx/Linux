@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# osint-file-search.sh
+# Simple OSINT-like file search tool for Linux
+# Usage: ./osint-file-search.sh "keyword"
+
+KEYWORD="$1"
+
+if [ -z "$KEYWORD" ]; then
+    echo "Usage: $0 <search term>"
+    exit 1
+fi
+
+echo "🔍 Searching for files related to: $KEYWORD"
+echo
+
+# 1. Search for filenames that contain the keyword
+echo "📁 Matching filenames:"
+find / -type f -iname "*$KEYWORD*" 2>/dev/null
+
+# 2. Search inside text files for keyword
+echo
+echo "📝 Searching inside files (grep):"
+grep -Ril --exclude-dir={/proc,/sys,/dev,/run,/var/lib/docker,/var/lib/snapd,/snap} "$KEYWORD" / 2>/dev/null
+
+# 3. Check file metadata (PDFs, images, etc.)
+echo
+echo "📂 Searching metadata (PDF, JPG, PNG):"
+find / -type f \( -iname "*.pdf" -o -iname "*.jpg" -o -iname "*.png" \) 2>/dev/null | while read -r file; do
+    if exiftool "$file" 2>/dev/null | grep -iq "$KEYWORD"; then
+        echo "📸 Match found in metadata: $file"
+    fi
+done
+
+# 4. Optional: Check file hash matches (basic IOC matching)
+# You can extend this by maintaining a hashlist of known indicators
+
+echo
+echo "✅ Search complete."
+
+✅ Requirements:
+
+    exiftool must be installed (for metadata scanning):
+
+    sudo apt install libimage-exiftool-perl
+
+🧠 What It Does:
+
+    Searches filenames
+
+    Greps file contents
+
+    Scans metadata in PDFs and images
+
+🛡️ Note:
+
+This script runs a lot of filesystem searches. For deep scans, you might want to run it with sudo and during off-hours to avoid performance hits.
