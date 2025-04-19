@@ -1,0 +1,106 @@
+This guide sets up a minimal but powerful phone-focused OSINT toolkit on a Linux machine (Debian/Ubuntu-based). It includes:
+
+    PhoneInfoga (core tool)
+
+    Google dorks & manual recon tools
+
+    Metadata extractors
+
+    Web-based APIs/scripts
+
+    Bonus: TUI/GUI options
+
+✅ Requirements
+
+    A Linux distro (Debian/Ubuntu recommended)
+
+    Python 3.8+
+
+    Git
+
+    Internet connection
+
+    Basic terminal knowledge
+
+📦 Step-by-Step Installation
+1. 📱 PhoneInfoga
+
+    Open-source framework for scanning international phone numbers
+
+Install:
+
+git clone https://github.com/sundowndev/phoneinfoga.git
+cd phoneinfoga
+python3 -m pip install -r requirements.txt
+
+Usage:
+
+python3 phoneinfoga.py -n "+14155552671"
+
+2. 🔍 OSINT-Toolbox CLI (for dorks, social lookups, etc.)
+
+git clone https://github.com/Sharathkumargn/OSINT-Toolbox.git
+cd OSINT-Toolbox
+chmod +x setup.sh
+./setup.sh
+
+Includes Google dorking, social media lookups, and more.
+3. 🐍 Photon (Web crawler for phone mentions on sites)
+
+git clone https://github.com/s0md3v/Photon.git
+cd Photon
+pip3 install -r requirements.txt
+
+Example usage:
+
+python3 photon.py -u "https://example.com" -t 3 --keys
+
+4. 🔎 Metagoofil (Metadata search)
+
+sudo apt install metagoofil
+
+Search public documents for phone number metadata.
+5. 🧠 Custom Scripts & APIs
+
+Create a bash script (phone_lookup.sh) to quickly search:
+
+#!/bin/bash
+number=$1
+echo "[*] Searching Google..."
+xdg-open "https://www.google.com/search?q=$number"
+
+echo "[*] Searching Truecaller..."
+xdg-open "https://www.truecaller.com/search/global/$number"
+
+echo "[*] Searching Sync.me..."
+xdg-open "https://sync.me/search/?number=$number"
+
+echo "[*] Searching Facebook..."
+xdg-open "https://www.facebook.com/search/top/?q=$number"
+
+Make executable:
+
+chmod +x phone_lookup.sh
+./phone_lookup.sh +14155552671
+
+6. 📊 Optional: GUI / TUI Dashboards
+TUI (Terminal User Interface):
+
+    recon-ng – Great for structured modules
+
+    theHarvester – Email/phone recon from public sources
+
+sudo apt install theharvester
+
+📁 Final Toolkit Structure
+
+osint-toolkit/
+├── phoneinfoga/
+├── OSINT-Toolbox/
+├── Photon/
+├── phone_lookup.sh
+├── other tools (e.g., metagoofil, theHarvester)
+
+🔐 Ethics Reminder
+
+Use OSINT tools legally and ethically. Never target individuals or organizations without proper authorization.
