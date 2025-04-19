@@ -1,0 +1,99 @@
+#!/bin/bash
+source .env
+
+echo "📝 Enter LinkedIn post content:"
+read POST_TEXT
+echo "🖼️  Enter local image path (or leave blank for text-only):"
+read IMAGE_PATH
+
+if [ -z "$POST_TEXT" ]; then
+  echo "❌ Post content is required!"
+  exit 1
+fi
+
+# If no image, post as text only
+if [ -z "$IMAGE_PATH" ]; then
+  echo "💼 Posting text-only update to LinkedIn..."
+  curl -s -X POST "https://api.linkedin.com/v2/ugcPosts" \
+    -H "Authorization: Bearer $LINKEDIN_ACCESS_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{
+          \"author\": \"urn:li:person:$LINKEDIN_USER_URN\",
+          \"lifecycleState\": \"PUBLISHED\",
+          \"specificContent\": {
+            \"com.linkedin.ugc.ShareContent\": {
+              \"shareCommentary\": { \"text\": \"$POST_TEXT\" },
+              \"shareMediaCategory\": \"NONE\"
+            }
+          },
+          \"visibility\": {
+            \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\"
+          }
+        }" \
+    -o /dev/null
+  echo "✅ Text-only LinkedIn post complete."
+  exit 0
+fi
+
+# Step 1: Register upload
+echo "📤 Registering image upload with LinkedIn..."
+REGISTER_RESPONSE=$(curl -s -X POST "https://api.linkedin.com/v2/assets?action=registerUpload" \
+  -H "Authorization: Bearer $LINKEDIN_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{
+        \"registerUploadRequest\": {
+          \"recipes\": [\"urn:li:digitalmediaRecipe:feedshare-image\"],
+          \"owner\": \"urn:li:person:$LINKEDIN_USER_URN\",
+          \"serviceRelationships\": [{
+            \"relationshipType\": \"OWNER\",
+            \"identifier\": \"urn:li:userGeneratedContent\"
+          }]
+        }
+      }")
+
+UPLOAD_URL=$(echo "$REGISTER_RESPONSE" | jq -r '.value.uploadMechanism["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"].uploadUrl')
+ASSET_URN=$(echo "$REGISTER_RESPONSE" | jq -r '.value.asset')
+
+# Step 2: Upload the image
+echo "🖼️  Uploading image to LinkedIn..."
+curl -s -X PUT "$UPLOAD_URL" \
+  -H "Authorization: Bearer $LINKEDIN_ACCESS_TOKEN" \
+  -H "Content-Type: image/jpeg" \
+  --data-binary "@$IMAGE_PATH" \
+  -o /dev/null
+
+# Step 3: Create the post with the image asset
+echo "💼 Posting LinkedIn update with image..."
+curl -s -X POST "https://api.linkedin.com/v2/ugcPosts" \
+  -H "Authorization: Bearer $LINKEDIN_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{
+        \"author\": \"urn:li:person:$LINKEDIN_USER_URN\",
+        \"lifecycleState\": \"PUBLISHED\",
+        \"specificContent\": {
+          \"com.linkedin.ugc.ShareContent\": {
+            \"shareCommentary\": { \"text\": \"$POST_TEXT\" },
+            \"shareMediaCategory\": \"IMAGE\",
+            \"media\": [{
+              \"status\": \"READY\",
+              \"media\": \"$ASSET_URN\",
+              \"title\": { \"text\": \"Image Upload\" }
+            }]
+          }
+        },
+        \"visibility\": {
+          \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\"
+        }
+      }" \
+  -o /dev/null
+
+echo "✅ LinkedIn post with image complete."
+
+🔧 Requirements
+
+    jq must be installed:
+
+sudo apt install jq   # Ubuntu/Debian  
+brew install jq       # macOS  
+
+Image should be JPEG (LinkedIn prefers .jpg/.jpeg)
