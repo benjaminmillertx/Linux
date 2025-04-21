@@ -1,3 +1,6 @@
+For educational, lawful ethical hacking or dfir only.
+Script by Benjamin Hunter Miller
+
 import hashlib
 import os
 from pathlib import Path
