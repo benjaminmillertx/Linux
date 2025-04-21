@@ -1,0 +1,78 @@
+Quantum-resistant (or post-quantum) cryptography is the branch of cryptography designed to withstand attacks from quantum computers — which can break many of the classical algorithms (like RSA, ECC, and DH) that we currently rely on.
+
+    In short: Quantum computers threaten asymmetric cryptography, and post-quantum cryptography (PQC) is our defense.
+
+⚠️ The Quantum Threat
+🧮 Shor’s Algorithm
+
+A quantum algorithm that can factor large integers and compute discrete logarithms exponentially faster than classical algorithms. That means:
+
+    RSA? ✅ Broken.
+
+    ECC? ✅ Broken.
+
+    DH key exchange? ✅ Broken.
+
+🧮 Grover’s Algorithm
+
+This speeds up brute-force attacks against symmetric ciphers (like AES), but only quadratically — so we just need to double the key sizes:
+
+    AES-256 is still considered safe.
+
+🛡️ Types of Quantum-Resistant Algorithms
+
+These are categories of cryptographic systems that are believed to be secure even against quantum computers:
+Class	Description	Example
+Lattice-based	Based on the hardness of lattice problems	NTRU, Kyber, Dilithium
+Hash-based	Uses cryptographic hash trees for signatures	XMSS, SPHINCS+
+Code-based	Uses error-correcting codes	Classic McEliece
+Multivariate	Uses polynomial equations over finite fields	Rainbow
+Isogeny-based	Based on elliptic curve isogenies	SIKE (was broken recently 😅)
+
+    💡 NIST's Post-Quantum Cryptography Standardization project is finalizing the Kyber (encryption) and Dilithium (signatures) as recommended standards.
+
+🧪 Sample: Lattice-Based Cryptography with Kyber (via PyCryptodome wrappers)
+
+You can try Kyber using the pqcrypto library (experimental):
+
+pip install pqcrypto
+
+🚀 Example: Kyber Key Exchange
+
+from pqcrypto.kem.kyber512 import generate_keypair, encrypt, decrypt
+
+# Key Generation
+public_key, secret_key = generate_keypair()
+
+# Encrypt a shared secret
+ciphertext, shared_secret_sender = encrypt(public_key)
+
+# Decrypt to get the shared secret
+shared_secret_receiver = decrypt(ciphertext, secret_key)
+
+print("Shared secret match:", shared_secret_sender == shared_secret_receiver)
+
+    💡 This is how a quantum-safe key exchange might be implemented in the future.
+
+🖋️ Example: Post-Quantum Signatures (Dilithium)
+
+from pqcrypto.sign.dilithium2 import generate_keypair, sign, verify
+
+public_key, secret_key = generate_keypair()
+message = b"Quantum-resilient message"
+signature = sign(message, secret_key)
+
+# Verify
+try:
+    verify(message, signature, public_key)
+    print("Signature is valid.")
+except:
+    print("Invalid signature.")
+
+🔐 Hybrid Cryptography
+
+Many modern systems (like TLS 1.3 hybrid modes) combine classical + post-quantum algorithms:
+
+    For example: X25519 + Kyber
+
+    This ensures backward compatibility and quantum safety.
