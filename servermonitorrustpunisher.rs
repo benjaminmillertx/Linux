@@ -26,7 +26,7 @@ fn main() {
             .args([
                 "-s",
                 &format!("High server load - [ {} ]", load),
-                "parrotngrok143@gmail.com",
+                "benjaminmillerdev@gmail.com",
             ])
             .stdin(std::process::Stdio::piped())
             .spawn()
